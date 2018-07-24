@@ -10,10 +10,10 @@ const db = require('./database');
 class Block{
   constructor(data){
     this.hash = "",
-    this.height = 0,
-    this.body = data,
-    this.time = 0,
-    this.previousBlockHash = ""
+      this.height = 0,
+      this.body = data,
+      this.time = 0,
+      this.previousBlockHash = ""
   }
 }
 
@@ -113,16 +113,23 @@ class Blockchain {
    */
   async validateChain(){
     let errorLog = [];
-    for (var i = 0; i < await this.getBlockHeight(); i++) {
+
+    const height = await this.getBlockHeight();
+    for (var i = 0; i < height; i++) {
       // validate block
-      if (!await this.validateBlock(i))errorLog.push(i);
-      // compare blocks hash link
-      let blockHash = (await this.getBlock(i)).hash;
-      let previousHash = (await this.getBlock(i+1)).previousBlockHash;
-      if (blockHash!==previousHash) {
-        errorLog.push(i);
+      console.log('Validating: ', i);
+      if (!await this.validateBlock(i)) errorLog.push(i);
+
+      // Do not validate previous hash for last block on the chain
+      if (i < (height - 1)) {
+        let blockHash = (await this.getBlock(i)).hash;
+        let previousHash = (await this.getBlock(i + 1)).previousBlockHash;
+        if (blockHash !== previousHash) {
+          errorLog.push(i);
+        }
       }
     }
+
     if (errorLog.length>0) {
       console.log('Block errors = ' + errorLog.length);
       console.log('Blocks: '+errorLog);
@@ -155,27 +162,11 @@ class Blockchain {
 
 }
 
-/*
 var bc = new Blockchain();
 async function test() {
-
-  // Adding a block before init will fail. Genesis block comes first!
-  await bc.addBlock(new Block('test')).catch(error => {console.log(error)});
-
   await bc.init();
-  await bc.addBlock(new Block('Remember, remember!'));
-  await bc.addBlock(new Block('The fifth of November,'));
-  await bc.addBlock(new Block('The Gunpowder treason and plot;'));
-  await bc.addBlock(new Block('I know of no reason'));
-  await bc.addBlock(new Block('Why the Gunpowder treason'));
-  await bc.addBlock(new Block('Should ever be forgot!'));
-  await bc.addBlock(new Block('Guy Fawkes and his companions'));
-  await bc.addBlock(new Block('Did the scheme contrive,'));
-  await bc.addBlock(new Block('To blow the King and Parliament'));
-  await bc.addBlock(new Block('All up alive.'));
-  bc.chain.printAll();
-  bc.validateChain();
-  bc.validateBlock(7);
+  await bc.validateChain();
+  //bc.validateBlock(7);
 }
 
 test();
